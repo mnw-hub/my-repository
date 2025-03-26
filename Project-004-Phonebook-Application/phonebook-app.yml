@@ -8,7 +8,65 @@ Parameters:
     Description: VPC ID
     Type: AWS::EC2::VPC::Id
 
+    subnets:
+      Description: Subnets for load balancer
+      Type: List<AWS::EC2::Subnet::Id>
+
 Resources:
+
+  # lb
+  # - listener
+  # - sg
+  # - tg
+  # asg
+  # - launchtemplate
+  # - scale cfg
+  # - tg
+
+
+  elbLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: phonebook-loadbalancer
+      Type: application
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      SecurityGroups: 
+        - !Ref sgElb
+      Subnets: !Ref subnets
+
+
+  elbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref elbTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref elbLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  sgElb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow HTTP from Internet"
+      GroupName: HTTP from anywhere
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+      VpcId: !Ref vpc
+  
+  elbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref vpc
+      TargetType: instance
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
 
   sgRds:
     Type: AWS::EC2::SecurityGroup
